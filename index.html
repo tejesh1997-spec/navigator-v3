@@ -1,977 +1,344 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>PlusCode Compass Navigator</title>
-  <style>
-    :root{
-      --bg:#0b0f14;
-      --card:#111826;
-      --muted:#9fb0c2;
-      --text:#e8f0f7;
-      --danger:#ff5a5f;
-      --ok:#34d399;
-      --warn:#fbbf24;
-      --accent:#60a5fa;
-      --ring: rgba(96,165,250,.35);
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
-      background: radial-gradient(1200px 800px at 50% 0%, rgba(96,165,250,.12), transparent 55%), var(--bg);
-      color:var(--text);
-      min-height:100vh;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:18px;
-    }
-    .app{
-      width:min(720px, 96vw);
-      background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
-      border:1px solid rgba(255,255,255,.07);
-      border-radius:22px;
-      overflow:hidden;
-      box-shadow: 0 20px 60px rgba(0,0,0,.35);
-    }
-    header{
-      padding:16px 18px;
-      border-bottom:1px solid rgba(255,255,255,.08);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:10px;
-    }
-    header h1{
-      font-size:14px;
-      margin:0;
-      letter-spacing:.4px;
-      font-weight:700;
-      text-transform:uppercase;
-      color:rgba(232,240,247,.92);
-    }
-    header .pill{
-      font-size:12px;
-      padding:6px 10px;
-      border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      color:rgba(232,240,247,.85);
-      background:rgba(255,255,255,.03);
-      display:flex;
-      align-items:center;
-      gap:8px;
-      user-select:none;
-    }
-    .dot{width:8px;height:8px;border-radius:999px;background:var(--warn);box-shadow:0 0 0 6px rgba(251,191,36,.15)}
-    .dot.ok{background:var(--ok);box-shadow:0 0 0 6px rgba(52,211,153,.14)}
-    .dot.bad{background:var(--danger);box-shadow:0 0 0 6px rgba(255,90,95,.14)}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Plus Code Compass Navigator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --bg-color: #ffffff;
+            --text-primary: #000000;
+        }
 
-    main{ padding:18px; }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            overflow-x: hidden;
+            touch-action: manipulation;
+        }
 
-    /* Required layout order: input -> button -> distance -> arrow */
-    .stack{ display:flex; flex-direction:column; gap:14px; }
+        /* Thick Hand-Drawn Style UI */
+        .glass-panel {
+            background: #fff;
+            border: 8px solid #000;
+            box-shadow: 12px 12px 0px 0px #000;
+        }
 
-    .field{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-    }
-    label{
-      font-size:12px;
-      color:rgba(232,240,247,.75);
-    }
-    input{
-      width:100%;
-      padding:14px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(17,24,38,.75);
-      color:var(--text);
-      outline:none;
-      font-size:16px;
-    }
-    input:focus{ border-color:rgba(96,165,250,.55); box-shadow:0 0 0 6px var(--ring); }
+        .btn-bold {
+            border: 8px solid #000;
+            box-shadow: 8px 8px 0px 0px #000;
+            transition: all 0.1s;
+        }
 
-    .actions{
-      display:flex;
-      gap:10px;
-      flex-wrap:wrap;
-    }
-    button{
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06);
-      color:var(--text);
-      font-weight:700;
-      font-size:14px;
-      cursor:pointer;
-      transition: transform .05s ease, background .2s ease, border .2s ease;
-      user-select:none;
-    }
-    button:hover{ background:rgba(255,255,255,.09); }
-    button:active{ transform: translateY(1px); }
-    button.primary{
-      background: linear-gradient(180deg, rgba(96,165,250,.95), rgba(59,130,246,.85));
-      border-color:rgba(96,165,250,.85);
-      color:#06101d;
-    }
-    button.primary:disabled{
-      opacity:.55;
-      cursor:not-allowed;
-      filter:saturate(.6);
-    }
-    button.ghost{ background:transparent; }
+        .btn-bold:active {
+            box-shadow: 0px 0px 0px 0px #000;
+            transform: translate(8px, 8px);
+        }
 
-    .status{
-      padding:12px 12px;
-      border-radius:14px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(17,24,38,.45);
-      color:rgba(232,240,247,.86);
-      font-size:13px;
-      line-height:1.35;
-    }
-    .status strong{ color:rgba(232,240,247,.95); }
-    .status.ok{ border-color:rgba(52,211,153,.25); background:rgba(52,211,153,.07); }
-    .status.warn{ border-color:rgba(251,191,36,.22); background:rgba(251,191,36,.06); }
-    .status.bad{ border-color:rgba(255,90,95,.22); background:rgba(255,90,95,.06); }
+        .btn-bold:disabled {
+            background: #eee;
+            color: #aaa;
+            box-shadow: none;
+            border-color: #aaa;
+            transform: none;
+        }
 
-    .distance{
-      padding:14px 14px;
-      border-radius:16px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(17,24,38,.55);
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-    }
-    .distance .label{ color:rgba(232,240,247,.70); font-size:12px; }
-    .distance .value{ font-size:20px; font-weight:900; letter-spacing:.2px; }
+        .input-bold {
+            border: 8px solid #000;
+            box-shadow: 8px 8px 0px 0px #000;
+        }
 
-    .arrowWrap{
-      border-radius:18px;
-      border:1px solid rgba(255,255,255,.10);
-      background:rgba(17,24,38,.35);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      padding:16px;
-      position:relative;
-      overflow:hidden;
-      min-height: clamp(280px, 52vh, 520px);
-    }
-    /* Responsive arrow scaling rules */
-    .arrow{
-      width: min(520px, 80vmin);
-      height: min(520px, 80vmin);
-      max-width: 520px;
-      max-height: 520px;
-      border-radius:999px;
-      position:relative;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      background:
-        radial-gradient(circle at 50% 50%, rgba(255,255,255,.06), rgba(255,255,255,.02) 55%, rgba(0,0,0,0) 70%),
-        radial-gradient(circle at 50% 50%, rgba(96,165,250,.14), rgba(0,0,0,0) 60%);
-      border:1px solid rgba(255,255,255,.10);
-      box-shadow: inset 0 0 0 2px rgba(255,255,255,.02);
-    }
-    .ring{
-      position:absolute;
-      inset:10%;
-      border-radius:999px;
-      border:1px dashed rgba(255,255,255,.16);
-      opacity:.55;
-    }
-    .north{
-      position:absolute;
-      top:10px;
-      font-size:12px;
-      letter-spacing:.35px;
-      color:rgba(232,240,247,.7);
-    }
+        .compass-container {
+            position: relative;
+            width: 85vw;
+            height: 85vw;
+            max-width: 450px;
+            max-height: 450px;
+            margin: 3rem auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
 
-    /* SVG arrow */
-    .needle{
-      width: min(320px, 46vmin);
-      height: min(320px, 46vmin);
-      transform: rotate(0deg);
-      transform-origin: 50% 50%;
-      transition: transform .08s linear;
-      filter: drop-shadow(0 12px 26px rgba(0,0,0,.4));
-    }
+        /* Thick Line Art Arrow */
+        .thick-stroke {
+            stroke: #000;
+            stroke-width: 14;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            fill: none;
+        }
 
-    .subInfo{
-      position:absolute;
-      left:12px;
-      right:12px;
-      bottom:12px;
-      display:flex;
-      align-items:flex-end;
-      justify-content:space-between;
-      gap:10px;
-      pointer-events:none;
-    }
-    .mini{
-      font-size:12px;
-      color:rgba(232,240,247,.72);
-      background:rgba(0,0,0,.22);
-      border:1px solid rgba(255,255,255,.10);
-      padding:8px 10px;
-      border-radius:12px;
-      backdrop-filter: blur(8px);
-      max-width: 70%;
-    }
-    .mini b{ color:rgba(232,240,247,.92); }
+        #arrow-rotator {
+            transition: transform 0.25s cubic-bezier(0.25, 0.1, 0.25, 1);
+            will-change: transform;
+            transform-origin: center;
+        }
 
-    .footer{
-      padding:12px 18px 16px;
-      border-top:1px solid rgba(255,255,255,.08);
-      color:rgba(232,240,247,.55);
-      font-size:12px;
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-      flex-wrap:wrap;
-    }
-    .linklike{ color:rgba(96,165,250,.92); text-decoration:none; pointer-events:auto; }
-
-    @media (max-width: 480px){
-      .arrowWrap{ min-height: 46vh; }
-      .arrow{ width: min(440px, 92vmin); height: min(440px, 92vmin); }
-      .needle{ width: min(300px, 64vmin); height: min(300px, 64vmin); }
-    }
-    @media (min-width: 768px) and (max-width: 1024px){
-      .arrowWrap{ min-height: 56vh; }
-    }
-  </style>
+        .step-bubble {
+            width: 40px;
+            height: 40px;
+            border: 6px solid #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            font-size: 1.2rem;
+        }
+    </style>
 </head>
-<body>
-  <div class="app">
-    <header>
-      <h1>PlusCode Compass Navigator</h1>
-      <div class="pill" id="pill"><span class="dot" id="pillDot"></span><span id="pillText">Checking…</span></div>
+<body class="p-4 md:p-8 flex flex-col items-center min-h-screen">
+
+    <header class="w-full max-w-md mb-8 text-center">
+        <h1 class="text-4xl font-black uppercase tracking-tighter italic">Navigator</h1>
+        <p class="text-xs font-black opacity-40 uppercase tracking-widest">Minimal Compass Logic</p>
     </header>
 
-    <main>
-      <div class="stack">
-        <!-- 1) Plus Code input -->
-        <div class="field">
-          <label for="plusCode">Plus Code</label>
-          <input id="plusCode" autocomplete="off" placeholder="e.g. 7J4V+5W Bengaluru or 849VCWC8+R9" />
+    <!-- HTTPS & Permission Guard -->
+    <div id="guard-screen" class="w-full max-w-md glass-panel p-8 space-y-6 z-50">
+        <h2 class="text-2xl font-black italic underline decoration-8">SETUP</h2>
+        
+        <div id="https-warning" class="hidden text-red-600 font-black border-[6px] border-red-600 p-4 mb-2">
+            ⚠️ HTTPS REQUIRED FOR SENSORS
         </div>
-
-        <!-- 2) Start Navigation button (and permission CTAs) -->
-        <div class="actions">
-          <button class="primary" id="startBtn" disabled>Start Navigation</button>
-          <button class="ghost" id="stopBtn" style="display:none">Stop</button>
-          <button id="enableLocationBtn">Enable Location</button>
-          <button id="enableCompassBtn" style="display:none">Enable Compass</button>
-        </div>
-
-        <div class="status" id="statusBox">
-          <strong>Status:</strong> Loading…
-        </div>
-
-        <!-- 3) Distance -->
-        <div class="distance">
-          <div>
-            <div class="label">Distance to location</div>
-            <div class="value" id="distanceText">—</div>
-          </div>
-          <div style="text-align:right">
-            <div class="label">Arrival</div>
-            <div class="value" id="arrivalText" style="font-size:14px; font-weight:800; opacity:.9">—</div>
-          </div>
-        </div>
-
-        <!-- 4) Compass arrow -->
-        <div class="arrowWrap">
-          <div class="arrow" aria-label="Compass">
-            <div class="ring"></div>
-            <div class="north">N</div>
-            <svg class="needle" id="needle" viewBox="0 0 200 200" role="img" aria-label="Direction arrow">
-              <defs>
-                <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0" stop-color="#e8f0f7" stop-opacity="0.95"/>
-                  <stop offset="1" stop-color="#60a5fa" stop-opacity="0.95"/>
-                </linearGradient>
-              </defs>
-              <circle cx="100" cy="100" r="10" fill="rgba(232,240,247,.9)" />
-              <path d="M100 18 L134 120 L100 104 L66 120 Z" fill="url(#g)"/>
-              <path d="M100 182 L120 120 L100 132 L80 120 Z" fill="rgba(255,255,255,.15)"/>
-            </svg>
-
-            <div class="subInfo">
-              <div class="mini" id="miniLeft">Heading: —</div>
-              <div class="mini" id="miniRight">Bearing: —</div>
+        
+        <div class="space-y-6">
+            <div id="step-location" class="flex items-center space-x-4">
+                <div class="step-bubble" id="icon-location">1</div>
+                <span class="font-black text-lg">LOCATION</span>
             </div>
-          </div>
+            <div id="step-orientation" class="flex items-center space-x-4">
+                <div class="step-bubble" id="icon-orientation">2</div>
+                <span class="font-black text-lg">COMPASS</span>
+            </div>
         </div>
-      </div>
+
+        <button id="btn-enable-permissions" class="w-full py-5 bg-black text-white font-black uppercase tracking-tighter text-xl btn-bold">
+            GRANT ACCESS
+        </button>
+    </div>
+
+    <!-- Main Navigation UI -->
+    <main id="nav-screen" class="hidden w-full max-w-md flex flex-col flex-grow items-center">
+        
+        <div class="w-full space-y-2 mb-8">
+            <label for="plus-code-input" class="text-xs font-black uppercase opacity-40">Plus Code Target</label>
+            <input type="text" id="plus-code-input" placeholder="7J4V+5W BENGALURU" 
+                   class="w-full p-5 bg-white font-black text-xl uppercase input-bold focus:outline-none">
+            <p id="input-error" class="text-red-600 font-black text-sm hidden">INVALID CODE</p>
+        </div>
+
+        <button id="btn-start-nav" class="w-full py-5 bg-black text-white font-black uppercase tracking-tighter text-xl btn-bold mb-10">
+            START GUIDANCE
+        </button>
+
+        <div class="w-full text-center mb-6">
+            <div class="glass-panel p-6">
+                <span class="text-xs font-black uppercase block opacity-40 mb-1">Target Distance</span>
+                <span id="distance-display" class="text-6xl font-black tracking-tighter">---</span>
+            </div>
+        </div>
+
+        <div class="compass-container">
+            <svg id="compass-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+                <!-- Circular Guide -->
+                <circle cx="100" cy="100" r="90" class="thick-stroke" style="opacity: 0.1;"/>
+                <!-- Simple Monochrome Line Art Arrow -->
+                <g id="arrow-rotator">
+                    <path d="M100 25 L165 160 L100 135 L35 160 Z" class="thick-stroke" />
+                </g>
+            </svg>
+            <div id="calibration-msg" class="absolute bottom-[-30px] left-0 right-0 text-center text-xs font-black uppercase opacity-30 hidden">
+                CALIBRATE: MOVE PHONE IN '8' PATTERN
+            </div>
+        </div>
+
+        <div id="arrival-msg" class="hidden p-6 border-[8px] border-black bg-white font-black text-2xl text-center w-full mb-8">
+            ARRIVED ✅
+        </div>
+
+        <button id="btn-stop-nav" class="hidden w-full py-5 bg-white border-[8px] border-black font-black uppercase tracking-tighter text-xl btn-bold mt-auto mb-6">
+            STOP
+        </button>
     </main>
 
-    <div class="footer">
-      <div>Privacy: On-device only. No tracking. No backend.</div>
-      <a class="linklike" href="#" id="toggleDebug">Debug</a>
-    </div>
-  </div>
-
-<script>
-/***********************
- * PlusCode Compass Navigator
- * Single-file HTML/CSS/JS
- ***********************/
-
-// ---------- Config ----------
-const ARRIVAL_THRESHOLD_M = 15;
-const HEADING_ALPHA = 0.20;   // 0.15–0.25 (PRD)
-const DIST_ALPHA = 0.22;
-const UI_FPS = 45;            // 30–60 fps (PRD)
-
-// ---------- State ----------
-let debug = false;
-let appState = -1; // -1 gate, 0 idle, 1 requesting, 2 navigating, 3 arrived, 4 error
-
-let dest = null; // {lat,lng}
-
-let watchId = null;
-let lastPos = null; // {lat,lng,acc,timestamp}
-
-let rawHeading = null;        // 0..360
-let smoothHeading = null;     // 0..360
-let headingHistory = [];
-
-let rawDistance = null;
-let smoothDistance = null;
-
-let bearingDeg = null;
-
-let orientationActive = false;
-let compassSupported = false;
-let locationGranted = false;
-
-let renderTimer = null;
-
-// ---------- DOM ----------
-const el = {
-  pill: document.getElementById('pill'),
-  pillDot: document.getElementById('pillDot'),
-  pillText: document.getElementById('pillText'),
-
-  plusCode: document.getElementById('plusCode'),
-  startBtn: document.getElementById('startBtn'),
-  stopBtn: document.getElementById('stopBtn'),
-  enableLocationBtn: document.getElementById('enableLocationBtn'),
-  enableCompassBtn: document.getElementById('enableCompassBtn'),
-
-  statusBox: document.getElementById('statusBox'),
-  distanceText: document.getElementById('distanceText'),
-  arrivalText: document.getElementById('arrivalText'),
-
-  needle: document.getElementById('needle'),
-  miniLeft: document.getElementById('miniLeft'),
-  miniRight: document.getElementById('miniRight'),
-
-  toggleDebug: document.getElementById('toggleDebug'),
-};
-
-// ---------- Helpers ----------
-function setPill(mode, text){
-  // mode: ok | warn | bad
-  el.pillDot.className = 'dot ' + (mode === 'ok' ? 'ok' : mode === 'bad' ? 'bad' : '');
-  el.pillText.textContent = text;
-}
-
-function setStatus(type, html){
-  el.statusBox.className = 'status' + (type ? ' ' + type : '');
-  el.statusBox.innerHTML = html;
-}
-
-function isHTTPS(){
-  return window.isSecureContext && location.protocol === 'https:';
-}
-
-function clampAngle360(a){
-  let x = a % 360;
-  if (x < 0) x += 360;
-  return x;
-}
-
-// Signed smallest delta from a->b in degrees (-180..180]
-function angleDelta(a, b){
-  let d = (b - a + 540) % 360 - 180;
-  return d;
-}
-
-function smoothAngle(prev, next, alpha){
-  if (prev == null) return clampAngle360(next);
-  const d = angleDelta(prev, next);
-  return clampAngle360(prev + alpha * d);
-}
-
-function formatDistance(m){
-  if (m == null || !isFinite(m)) return '—';
-  if (m >= 1000) return (m/1000).toFixed(1) + ' km';
-  return Math.round(m) + ' m';
-}
-
-function nowMs(){ return performance.now(); }
-
-// ---------- Geo math ----------
-function toRad(d){ return d * Math.PI / 180; }
-function toDeg(r){ return r * 180 / Math.PI; }
-
-// Bearing from (lat1,lng1) to (lat2,lng2)
-function computeBearing(lat1, lon1, lat2, lon2){
-  const φ1 = toRad(lat1), φ2 = toRad(lat2);
-  const Δλ = toRad(lon2 - lon1);
-  const y = Math.sin(Δλ) * Math.cos(φ2);
-  const x = Math.cos(φ1)*Math.sin(φ2) - Math.sin(φ1)*Math.cos(φ2)*Math.cos(Δλ);
-  const θ = Math.atan2(y, x);
-  return clampAngle360(toDeg(θ));
-}
-
-// Haversine distance meters
-function haversine(lat1, lon1, lat2, lon2){
-  const R = 6371000;
-  const φ1 = toRad(lat1), φ2 = toRad(lat2);
-  const Δφ = toRad(lat2-lat1);
-  const Δλ = toRad(lon2-lon1);
-  const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
-  const c = 2*Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-  return R*c;
-}
-
-// ---------- Plus Code decoding (local, no deps) ----------
-// Minimal Open Location Code decode implementation (sufficient for full codes).
-// Supports full plus codes like: 849VCWC8+R9
-// Short codes require locality (out of scope without geocoder) -> we show an error.
-
-const OLC_ALPHABET = '23456789CFGHJMPQRVWX';
-const SEPARATOR = '+';
-const SEPARATOR_POSITION = 8;
-const PADDING_CHAR = '0';
-const GRID_COLUMNS = 4;
-const GRID_ROWS = 5;
-
-function isValidPlusCode(input){
-  if (!input) return false;
-  const code = input.trim().toUpperCase();
-  if (!code.includes(SEPARATOR)) return false;
-  // basic format sanity
-  const sep = code.indexOf(SEPARATOR);
-  if (sep < 2 || sep > 10) return false;
-  return true;
-}
-
-function cleanPlusCode(input){
-  // Accept "CODE locality". Extract token containing '+'
-  const parts = input.trim().toUpperCase().split(/\s+/);
-  const token = parts.find(p => p.includes(SEPARATOR));
-  return token || input.trim().toUpperCase();
-}
-
-function stripNonCodeChars(code){
-  return code.replace(/[^0-9A-Z+]/g,'');
-}
-
-function isFullCode(code){
-  const c = stripNonCodeChars(code);
-  const sep = c.indexOf(SEPARATOR);
-  if (sep !== SEPARATOR_POSITION) return false;
-  // after separator should be at least 2 chars for full precision
-  return c.length >= SEPARATOR_POSITION + 3;
-}
-
-function decodePlusCode(input){
-  const token = cleanPlusCode(input);
-  const code = stripNonCodeChars(token);
-
-  if (!isValidPlusCode(code)) throw new Error("That Plus Code doesn’t look valid");
-
-  // Short codes need a reference location -> not possible offline.
-  if (!isFullCode(code)){
-    throw new Error('Short Plus Codes require a locality lookup. Please use a full Plus Code like 849VCWC8+R9.');
-  }
-
-  const normalized = code.replace(SEPARATOR,'');
-
-  // Pair section (first 10 chars possible, separator at 8 => pairs cover up to 10)
-  const pairCodeLength = Math.min(normalized.length, 10);
-  const pairCode = normalized.slice(0, pairCodeLength);
-
-  let latLo = -90, lngLo = -180;
-  let latPlace = 20, lngPlace = 20;
-
-  // Decode pairs
-  for (let i=0; i<pairCode.length; i+=2){
-    const latCh = pairCode[i];
-    const lngCh = pairCode[i+1];
-    const latVal = OLC_ALPHABET.indexOf(latCh);
-    const lngVal = OLC_ALPHABET.indexOf(lngCh);
-    if (latVal < 0 || lngVal < 0) throw new Error('Unable to decode Plus Code. Try using a full Plus Code.');
-
-    latLo += latVal * latPlace;
-    lngLo += lngVal * lngPlace;
-
-    latPlace /= 20;
-    lngPlace /= 20;
-  }
-
-  // Grid refinement (after 10 chars)
-  let grid = normalized.slice(pairCodeLength);
-  if (grid.length > 0){
-    let latPlaceGrid = latPlace;
-    let lngPlaceGrid = lngPlace;
-
-    for (let i=0; i<grid.length; i++){
-      const ch = grid[i];
-      const v = OLC_ALPHABET.indexOf(ch);
-      if (v < 0) throw new Error('Unable to decode Plus Code. Try using a full Plus Code.');
-
-      const row = Math.floor(v / GRID_COLUMNS);
-      const col = v % GRID_COLUMNS;
-
-      latPlaceGrid /= GRID_ROWS;
-      lngPlaceGrid /= GRID_COLUMNS;
-
-      latLo += row * latPlaceGrid;
-      lngLo += col * lngPlaceGrid;
-    }
-    latPlace = latPlaceGrid;
-    lngPlace = lngPlaceGrid;
-  }
-
-  // Center of decoded cell
-  const lat = latLo + latPlace/2;
-  const lng = lngLo + lngPlace/2;
-  return { lat, lng };
-}
-
-// ---------- Permissions / Sensors ----------
-async function refreshPermissionState(){
-  locationGranted = false;
-
-  if (!('geolocation' in navigator)){
-    setStateError('No GPS support on this browser/device.');
-    return;
-  }
-
-  // Try permissions API (not always supported)
-  try{
-    if (navigator.permissions && navigator.permissions.query){
-      const p = await navigator.permissions.query({ name: 'geolocation' });
-      locationGranted = (p.state === 'granted');
-      p.onchange = () => refreshPermissionState();
-    }
-  }catch(_){
-    // ignore
-  }
-
-  updateStartButtonState();
-}
-
-function updateStartButtonState(){
-  const httpsOk = isHTTPS();
-  const plusOk = isValidPlusCode(el.plusCode.value);
-
-  const canStart = httpsOk && locationGranted && plusOk;
-  el.startBtn.disabled = !canStart || appState === 1;
-}
-
-async function requestLocationPermission(){
-  if (!isHTTPS()){
-    setStateError('This app requires HTTPS to access location and compass permissions.');
-    return;
-  }
-
-  setStatus('warn', '<strong>Location permission:</strong> Requesting…');
-
-  return new Promise((resolve) => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        locationGranted = true;
-        setStatus('ok', '<strong>Location permission granted.</strong> You can start navigation.');
-        resolve(true);
-        updateStartButtonState();
-      },
-      (err) => {
-        locationGranted = false;
-        setStatus('bad', '<strong>Location access denied.</strong> Please enable location permissions in your browser settings, then Retry.');
-        resolve(false);
-        updateStartButtonState();
-      },
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
-    );
-  });
-}
-
-async function requestCompassPermissionIfNeeded(){
-  // iOS requires user gesture + DeviceOrientationEvent.requestPermission
-  const DOE = window.DeviceOrientationEvent;
-  if (!DOE) return false;
-
-  if (typeof DOE.requestPermission === 'function'){
-    try{
-      const res = await DOE.requestPermission();
-      return res === 'granted';
-    }catch(_){
-      return false;
-    }
-  }
-  return true; // Android/others
-}
-
-function startOrientationTracking(){
-  const handler = (event) => {
-    // Prefer iOS absolute compass heading if available
-    let heading = null;
-    if (typeof event.webkitCompassHeading === 'number'){
-      // iOS Safari: 0..360 (0 = north)
-      heading = event.webkitCompassHeading;
-    } else if (event.absolute === true || event.absolute === undefined){
-      // Many Android browsers: alpha = 0 when device faces north (but depends)
-      // Convert alpha to compass heading: heading = 360 - alpha
-      if (typeof event.alpha === 'number'){
-        heading = 360 - event.alpha;
-      }
-    }
-
-    if (heading == null || !isFinite(heading)) return;
-
-    // Screen orientation compensation
-    // When phone rotated, we should compensate arrow to match world.
-    // Use Screen Orientation API when available.
-    let screenAngle = 0;
-    try{
-      if (screen.orientation && typeof screen.orientation.angle === 'number') screenAngle = screen.orientation.angle;
-      else if (typeof window.orientation === 'number') screenAngle = window.orientation;
-    }catch(_){ /* ignore */ }
-
-    heading = clampAngle360(heading + screenAngle);
-
-    rawHeading = clampAngle360(heading);
-    smoothHeading = smoothAngle(smoothHeading, rawHeading, HEADING_ALPHA);
-
-    // For optional "Accuracy" estimation via variance
-    headingHistory.push(smoothHeading);
-    if (headingHistory.length > 20) headingHistory.shift();
-  };
-
-  window.addEventListener('deviceorientation', handler, true);
-  window.addEventListener('deviceorientationabsolute', handler, true);
-
-  orientationActive = true;
-  compassSupported = true; // will downgrade if no values arrive
-
-  // If after 2 seconds we still don't have heading -> mark unsupported
-  setTimeout(() => {
-    if (rawHeading == null){
-      compassSupported = false;
-      orientationActive = false;
-      setStatus('warn', '<strong>Compass unavailable.</strong> Distance-only mode active.');
-      el.enableCompassBtn.style.display = 'none';
-    }
-  }, 2000);
-}
-
-function stopOrientationTracking(){
-  // No easy remove because we used anonymous handler in this simple build.
-  // Since it’s a single-file MVP, we rely on state gating and stop render loop.
-  orientationActive = false;
-}
-
-// ---------- Navigation ----------
-function startGPS(){
-  if (watchId != null) return;
-  watchId = navigator.geolocation.watchPosition(
-    (pos) => {
-      lastPos = {
-        lat: pos.coords.latitude,
-        lng: pos.coords.longitude,
-        acc: pos.coords.accuracy,
-        timestamp: pos.timestamp
-      };
-
-      if (dest){
-        bearingDeg = computeBearing(lastPos.lat, lastPos.lng, dest.lat, dest.lng);
-        rawDistance = haversine(lastPos.lat, lastPos.lng, dest.lat, dest.lng);
-        smoothDistance = (smoothDistance == null) ? rawDistance : (DIST_ALPHA * rawDistance + (1-DIST_ALPHA) * smoothDistance);
-      }
-    },
-    (err) => {
-      setStateError('Location unavailable. Try moving outdoors or enabling GPS.');
-    },
-    {
-      enableHighAccuracy: true,
-      maximumAge: 500,
-      timeout: 10000
-    }
-  );
-}
-
-function stopGPS(){
-  if (watchId != null){
-    navigator.geolocation.clearWatch(watchId);
-    watchId = null;
-  }
-}
-
-function renderLoop(){
-  const frameMs = 1000 / UI_FPS;
-  if (renderTimer) clearInterval(renderTimer);
-
-  renderTimer = setInterval(() => {
-    // Update distance UI
-    el.distanceText.textContent = formatDistance(smoothDistance);
-
-    // Arrival
-    if (smoothDistance != null && smoothDistance < ARRIVAL_THRESHOLD_M){
-      if (appState !== 3){
-        appState = 3;
-        setStatus('ok', "<strong>You’ve arrived ✅</strong> You are within 15 m of the target.");
-      }
-      el.arrivalText.textContent = 'Arrived ✅';
-    } else {
-      el.arrivalText.textContent = '—';
-    }
-
-    // Bearing / Heading -> arrow rotation
-    let headingText = 'Heading: —';
-    if (smoothHeading != null) headingText = `Heading: <b>${Math.round(smoothHeading)}°</b>`;
-
-    let bearingText = 'Bearing: —';
-    if (bearingDeg != null) bearingText = `Bearing: <b>${Math.round(bearingDeg)}°</b>`;
-
-    // Optional "Accuracy" signal: variance of heading history
-    let accLabel = '';
-    if (headingHistory.length >= 10){
-      const avg = headingHistory.reduce((a,b)=>a+b,0)/headingHistory.length;
-      const variance = headingHistory.reduce((a,b)=>a+(angleDelta(avg,b)**2),0)/headingHistory.length;
-      if (variance > 400) accLabel = ' · Accuracy: Low';
-      else if (variance > 120) accLabel = ' · Accuracy: Medium';
-      else accLabel = ' · Accuracy: Good';
-    }
-
-    el.miniLeft.innerHTML = headingText + (debug ? accLabel : '');
-    el.miniRight.innerHTML = bearingText;
-
-    // rotate needle
-    if (bearingDeg != null && smoothHeading != null && compassSupported){
-      const rotation = clampAngle360(bearingDeg - smoothHeading);
-      el.needle.style.transform = `rotate(${rotation}deg)`;
-
-      // Calibration helper
-      if (debug === false && headingHistory.length >= 10){
-        const avg = headingHistory.reduce((a,b)=>a+b,0)/headingHistory.length;
-        const variance = headingHistory.reduce((a,b)=>a+(angleDelta(avg,b)**2),0)/headingHistory.length;
-        if (variance > 350){
-          setStatus('warn', '<strong>Tip:</strong> If the arrow feels unstable, move your phone in a figure-8 to calibrate.');
+    <footer class="mt-auto py-6 text-[10px] font-black uppercase opacity-20 text-center tracking-widest">
+        Device-Only Processing • No Tracking
+    </footer>
+
+    <script>
+        /**
+         * BROWSER-COMPATIBLE PLUS CODE DECODER
+         */
+        const PlusCode = {
+            ALPHABET: "23456789CFGHJMPQRVWX",
+            decode: function(code) {
+                code = code.split(' ')[0].replace("+", "").toUpperCase();
+                let lat = 0, lng = 0;
+                let latRes = 20, lngRes = 20;
+                for (let i = 0; i < Math.min(code.length, 10); i += 2) {
+                    lat += this.ALPHABET.indexOf(code[i]) * latRes;
+                    lng += this.ALPHABET.indexOf(code[i+1]) * lngRes;
+                    latRes /= 20;
+                    lngRes /= 20;
+                }
+                return { lat: (lat - 90) + (latRes * 10), lng: (lng - 180) + (lngRes * 10) };
+            },
+            isValid: function(code) {
+                if (!code || typeof code !== 'string') return false;
+                const parts = code.trim().split(' ');
+                const main = parts[0];
+                if (main.indexOf('+') === -1) return false;
+                const clean = main.replace('+', '');
+                if (clean.length < 4) return false;
+                for(let char of clean) {
+                    if (this.ALPHABET.indexOf(char.toUpperCase()) === -1) return false;
+                }
+                return true;
+            }
+        };
+
+        const state = {
+            isNavigating: false,
+            currentPos: null,
+            targetPos: null,
+            smoothedHeading: 0,
+            smoothedDistance: null,
+            watchId: null,
+            alpha: 0.18, // Smoothing constant
+            accuracy: 0
+        };
+
+        const elements = {
+            guard: document.getElementById('guard-screen'),
+            nav: document.getElementById('nav-screen'),
+            input: document.getElementById('plus-code-input'),
+            inputError: document.getElementById('input-error'),
+            btnEnable: document.getElementById('btn-enable-permissions'),
+            btnStart: document.getElementById('btn-start-nav'),
+            btnStop: document.getElementById('btn-stop-nav'),
+            distance: document.getElementById('distance-display'),
+            arrow: document.getElementById('arrow-rotator'),
+            arrival: document.getElementById('arrival-msg'),
+            httpsWarning: document.getElementById('https-warning'),
+            calibration: document.getElementById('calibration-msg')
+        };
+
+        if (location.protocol !== 'https:' && location.hostname !== 'localhost') {
+            elements.httpsWarning.classList.remove('hidden');
+            elements.btnEnable.disabled = true;
         }
-      }
-    } else {
-      // distance-only / placeholder
-      el.needle.style.transform = 'rotate(0deg)';
-    }
 
-    // debug footer
-    if (debug && dest && lastPos){
-      const extra = `Destination: ${dest.lat.toFixed(6)}, ${dest.lng.toFixed(6)} · GPS acc: ${Math.round(lastPos.acc)}m`;
-      // Don’t overwrite critical warnings
-      if (!el.statusBox.className.includes('bad')){
-        setStatus('ok', `<strong>Navigating.</strong> ${extra}`);
-      }
-    }
+        elements.btnEnable.addEventListener('click', async () => {
+            try {
+                await new Promise((res, rej) => {
+                    navigator.geolocation.getCurrentPosition(res, rej, { enableHighAccuracy: true });
+                });
+                document.getElementById('icon-location').innerHTML = '✓';
+                document.getElementById('icon-location').style.background = '#000';
+                document.getElementById('icon-location').style.color = '#fff';
 
-  }, frameMs);
-}
+                if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission !== 'granted') throw new Error('SENSOR PERMISSION DENIED');
+                }
+                
+                document.getElementById('icon-orientation').innerHTML = '✓';
+                document.getElementById('icon-orientation').style.background = '#000';
+                document.getElementById('icon-orientation').style.color = '#fff';
 
-function stopRenderLoop(){
-  if (renderTimer){
-    clearInterval(renderTimer);
-    renderTimer = null;
-  }
-}
+                setTimeout(() => {
+                    elements.guard.classList.add('hidden');
+                    elements.nav.classList.remove('hidden');
+                }, 400);
+            } catch (err) {
+                alert("ERROR: " + err.message);
+            }
+        });
 
-// ---------- App state mgmt ----------
-function setStateError(message){
-  appState = 4;
-  setPill('bad', 'Error');
-  setStatus('bad', `<strong>Error:</strong> ${escapeHTML(message)}<br/><br/><span style="opacity:.9">If this is a permissions issue, try: Enable Location → reload page.</span>`);
-  el.startBtn.disabled = true;
-}
+        function calculateDistance(lat1, lon1, lat2, lon2) {
+            const R = 6371e3;
+            const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+            const Δφ = (lat2 - lat1) * Math.PI / 180, Δλ = (lon2 - lon1) * Math.PI / 180;
+            const a = Math.sin(Δφ/2)**2 + Math.cos(φ1)*Math.cos(φ2)*Math.sin(Δλ/2)**2;
+            return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        }
 
-function setGateState(){
-  // HTTPS gate
-  if (!isHTTPS()){
-    setPill('bad', 'HTTPS required');
-    setStatus('bad', '<strong>HTTPS required.</strong> This app requires HTTPS to access location and compass permissions.');
-    el.startBtn.disabled = true;
-    return;
-  }
+        function calculateBearing(lat1, lon1, lat2, lon2) {
+            const φ1 = lat1 * Math.PI / 180, φ2 = lat2 * Math.PI / 180;
+            const λ1 = lon1 * Math.PI / 180, λ2 = lon2 * Math.PI / 180;
+            const y = Math.sin(λ2 - λ1) * Math.cos(φ2);
+            const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(λ2 - λ1);
+            return (Math.atan2(y, x) * 180 / Math.PI + 360) % 360;
+        }
 
-  setPill('warn', 'Permissions');
-  setStatus('warn', '<strong>Location permission is required to navigate.</strong> Tap Enable Location.');
-}
+        function handleOrientation(event) {
+            let heading = event.webkitCompassHeading;
+            if (heading === undefined) {
+                heading = event.alpha ? 360 - event.alpha : 0;
+            }
+            
+            const screenOrientation = window.orientation || 0;
+            heading = (heading + screenOrientation + 360) % 360;
 
-function escapeHTML(s){
-  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-}
+            // Handle 0/360 boundary for smoothing
+            if (Math.abs(heading - state.smoothedHeading) > 180) {
+                if (heading > state.smoothedHeading) state.smoothedHeading += 360;
+                else state.smoothedHeading -= 360;
+            }
+            state.smoothedHeading = (state.alpha * heading) + (1 - state.alpha) * state.smoothedHeading;
+            updateUI();
+        }
 
-// ---------- Events ----------
-el.plusCode.addEventListener('input', () => {
-  updateStartButtonState();
-});
+        elements.btnStart.onclick = () => {
+            const val = elements.input.value.trim();
+            if (!PlusCode.isValid(val)) {
+                elements.inputError.classList.remove('hidden');
+                return;
+            }
 
-el.enableLocationBtn.addEventListener('click', async () => {
-  appState = 1;
-  setPill('warn','Requesting…');
-  await requestLocationPermission();
-  await refreshPermissionState();
-  appState = 0;
-  if (locationGranted){
-    setPill('ok','Ready');
-    // If desktop, compass likely absent
-    setStatus('ok', '<strong>Ready.</strong> Enter a Plus Code and tap Start Navigation.');
-  } else {
-    setGateState();
-  }
-});
+            elements.inputError.classList.add('hidden');
+            state.targetPos = PlusCode.decode(val);
+            state.isNavigating = true;
+            elements.btnStart.classList.add('hidden');
+            elements.btnStop.classList.remove('hidden');
+            elements.input.disabled = true;
 
-el.enableCompassBtn.addEventListener('click', async () => {
-  const ok = await requestCompassPermissionIfNeeded();
-  if (!ok){
-    compassSupported = false;
-    setStatus('warn', '<strong>Compass permission denied.</strong> Distance-only mode active.');
-  } else {
-    startOrientationTracking();
-    setStatus('ok', '<strong>Compass enabled.</strong> Start navigation.');
-  }
-});
+            window.addEventListener('deviceorientation', handleOrientation, true);
+            state.watchId = navigator.geolocation.watchPosition(pos => {
+                state.currentPos = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+                state.accuracy = pos.coords.accuracy;
+                updateUI();
+            }, null, { enableHighAccuracy: true });
+        };
 
-el.startBtn.addEventListener('click', async () => {
-  try{
-    if (!isHTTPS()) throw new Error('This app requires HTTPS to use location and compass.');
-    if (!locationGranted) throw new Error('Location permission is required to navigate.');
+        elements.btnStop.onclick = () => {
+            state.isNavigating = false;
+            window.removeEventListener('deviceorientation', handleOrientation);
+            navigator.geolocation.clearWatch(state.watchId);
+            elements.btnStart.classList.remove('hidden');
+            elements.btnStop.classList.add('hidden');
+            elements.input.disabled = false;
+            elements.distance.innerText = "---";
+            elements.arrival.classList.add('hidden');
+            elements.arrow.style.transform = `rotate(0deg)`;
+        };
 
-    const input = el.plusCode.value.trim();
-    if (!input) throw new Error('Please enter a Plus Code');
-    if (!isValidPlusCode(input)) throw new Error("That Plus Code doesn’t look valid");
+        function updateUI() {
+            if (!state.isNavigating || !state.currentPos || !state.targetPos) return;
 
-    dest = decodePlusCode(input);
+            const dist = calculateDistance(state.currentPos.lat, state.currentPos.lng, state.targetPos.lat, state.targetPos.lng);
+            state.smoothedDistance = state.smoothedDistance === null ? dist : (0.15 * dist + 0.85 * state.smoothedDistance);
+            
+            elements.distance.innerText = state.smoothedDistance >= 1000 ? (state.smoothedDistance / 1000).toFixed(1) + "km" : Math.round(state.smoothedDistance) + "m";
+            elements.arrival.classList.toggle('hidden', state.smoothedDistance >= 15);
 
-    appState = 1;
-    setPill('warn','Requesting…');
-    setStatus('warn', '<strong>Requesting permissions…</strong>');
-
-    // Request compass permission on iOS during user gesture
-    const ok = await requestCompassPermissionIfNeeded();
-    if (ok){
-      el.enableCompassBtn.style.display = 'none';
-      startOrientationTracking();
-    } else {
-      compassSupported = false;
-      el.enableCompassBtn.style.display = 'none';
-    }
-
-    // Start GPS tracking
-    startGPS();
-
-    // Start render loop
-    renderLoop();
-
-    appState = 2;
-    setPill('ok','Navigating');
-    setStatus('ok', '<strong>Navigating.</strong> Walk in the direction of the arrow.');
-
-    // UI controls
-    el.stopBtn.style.display = '';
-    el.enableLocationBtn.style.display = 'none';
-
-    // Lock input (optional per PRD)
-    el.plusCode.disabled = true;
-
-  }catch(err){
-    setStateError(err.message || 'Unknown error');
-  }
-});
-
-el.stopBtn.addEventListener('click', () => {
-  stopGPS();
-  stopRenderLoop();
-  stopOrientationTracking();
-
-  dest = null;
-  lastPos = null;
-  rawHeading = null;
-  smoothHeading = null;
-  headingHistory = [];
-  rawDistance = null;
-  smoothDistance = null;
-  bearingDeg = null;
-
-  appState = 0;
-  setPill('ok','Ready');
-  setStatus('ok', '<strong>Stopped.</strong> You can enter another Plus Code.');
-
-  el.plusCode.disabled = false;
-  el.stopBtn.style.display = 'none';
-  el.enableLocationBtn.style.display = '';
-  el.enableLocationBtn.textContent = 'Enable Location';
-  el.distanceText.textContent = '—';
-  el.arrivalText.textContent = '—';
-  el.needle.style.transform = 'rotate(0deg)';
-
-  updateStartButtonState();
-});
-
-el.toggleDebug.addEventListener('click', (e) => {
-  e.preventDefault();
-  debug = !debug;
-  el.toggleDebug.textContent = debug ? 'Debug: ON' : 'Debug';
-  if (debug){
-    setStatus('ok', '<strong>Debug enabled.</strong> You will see decoded destination + GPS accuracy.');
-  } else {
-    if (appState === 2) setStatus('ok', '<strong>Navigating.</strong> Walk in the direction of the arrow.');
-  }
-});
-
-// ---------- Boot ----------
-(function init(){
-  // HTTPS requirement gate
-  if (!isHTTPS()){
-    setPill('bad','HTTPS required');
-    setStatus('bad', '<strong>HTTPS required.</strong> This app requires HTTPS to access location and compass permissions.');
-    el.enableLocationBtn.style.display = 'none';
-    el.startBtn.disabled = true;
-    return;
-  }
-
-  setPill('warn','Permissions');
-  setGateState();
-
-  // Desktop sensor limitation handling: show compass CTA only if supported
-  const DOE = window.DeviceOrientationEvent;
-  if (DOE){
-    el.enableCompassBtn.style.display = '';
-  }
-
-  refreshPermissionState().then(() => {
-    if (locationGranted){
-      setPill('ok','Ready');
-      setStatus('ok', '<strong>Ready.</strong> Enter a Plus Code and tap Start Navigation.');
-    }
-  });
-
-  // If permissions are granted but user on desktop with no compass: allow distance-only.
-  // We detect compass support once navigation starts.
-})();
-</script>
+            const bearing = calculateBearing(state.currentPos.lat, state.currentPos.lng, state.targetPos.lat, state.targetPos.lng);
+            // Result is Bearing relative to true north - device heading
+            elements.arrow.style.transform = `rotate(${bearing - state.smoothedHeading}deg)`;
+        }
+    </script>
 </body>
 </html>
